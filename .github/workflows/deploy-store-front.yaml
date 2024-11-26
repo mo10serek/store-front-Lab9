@@ -63,8 +63,9 @@ jobs:
       - name: Deploy to AKS
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           echo "$KUBE_CONFIG_DATA" | base64 -d > kubeconfig
           export KUBECONFIG=kubeconfig
-          kubectl set image deployment/store-front store-front=<DOCKER_HUB_USERNAME>/store-front-l9:latest
+          kubectl set image deployment/store-front store-front=$DOCKER_USERNAME/store-front-l9:latest
           kubectl rollout restart deployment/store-front
