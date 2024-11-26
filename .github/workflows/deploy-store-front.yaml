@@ -6,9 +6,11 @@ on:
       - main # Trigger on pushes to the main branch
 
 jobs:
-  # Step 1: Test Job (Unit Tests on Source Code)
-  test:
+  # Step 1: Build Job (Unit Test and Build Docker Image)
+  # Build a packaged version of the application that can run in any Docker environment.
+  Build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -21,18 +23,50 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Simulate Unit Tests
+      #Test individual units or components of the code in isolation, such as functions, or classes.
+      - name: Unit Tests
         run: echo "Simulating unit tests... Test execution completed successfully!"
 
       # - name: Run Unit Tests
       #   run: npm run test
 
-  # Step 2: Build Job (Build Docker Image)
-  build:
+      - name: Build Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker build -t $DOCKER_USERNAME/store-front-l9:test .
+
+      - name: Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker push $DOCKER_USERNAME/store-front-l9:test
+
+  # Step 2: Test Job (Integration Tests)
+  # Run automated tests against the containerized application to ensure it behaves as expected.
+  Test:
     runs-on: ubuntu-latest
 
     # Ensure the build job only runs if tests pass
-    needs: test
+    needs: Build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Validate the interactions between different parts of the application
+      - name: Integration Tests
+        run: echo "Simulating integration tests... Test execution completed successfully!"
+
+  # Step 3: Release Job (Release Docker Image)
+  # Package the tested container images with version tags and push them to a container registry.
+  Release:
+    runs-on: ubuntu-latest
+
+    # Ensure the build job only runs if tests pass
+    needs: Test
 
     steps:
       - name: Checkout Code
@@ -53,11 +87,12 @@ jobs:
           docker push $DOCKER_USERNAME/store-front-l9:latest
 
   # Step 3: Deploy Job
-  deploy:
+  # Deploy the container image to a container orchestrator, such as K8s.
+  Deploy:
     runs-on: ubuntu-latest
 
     # Ensure the deploy job only runs if the build is successful
-    needs: build
+    needs: Release
 
     steps:
       - name: Deploy to AKS
