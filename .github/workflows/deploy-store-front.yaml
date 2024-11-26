@@ -81,6 +81,7 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
         run: |
           echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker pull $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:test
           docker tag $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:test $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest
           docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest
 
